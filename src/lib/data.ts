@@ -2,6 +2,7 @@ import { DashboardData, SportKey } from '@/types';
 import { fetchNews } from './news';
 import { fetchScores } from './scores';
 import { readCache, writeCache } from './cache';
+import { fallbackDashboardData } from '@/data/fallback';
 
 export async function getDashboardData(forceFresh = false): Promise<DashboardData> {
   if (!forceFresh) {
@@ -10,7 +11,13 @@ export async function getDashboardData(forceFresh = false): Promise<DashboardDat
   }
 
   const [news, games] = await Promise.all([fetchNews(), fetchScores()]);
-  const data = { updatedAt: new Date().toISOString(), news, games };
+
+  const data: DashboardData = {
+    updatedAt: new Date().toISOString(),
+    news: news.length > 0 ? news : fallbackDashboardData.news,
+    games: games.length > 0 ? games : fallbackDashboardData.games,
+  };
+
   await writeCache(data);
   return data;
 }
