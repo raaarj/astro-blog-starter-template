@@ -1,64 +1,83 @@
-# Astro Starter Kit: Blog
+# Ole Miss Sports Hub
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template)
+Production-ready Next.js dashboard for Ole Miss fans with live-ish news + score aggregation.
 
-![Astro Template Preview](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+## Architecture
 
-<!-- dash-content-start -->
+- **Framework**: Next.js App Router + TypeScript + Tailwind CSS
+- **Data flow**:
+  1. Fetch latest RSS news from multiple public feeds
+  2. Fetch Ole Miss team schedules/scores from ESPN public endpoints
+  3. Normalize into shared schemas (`NewsArticle`, `Game`)
+  4. Dedupe + sort + cache for 10 minutes in `.cache/dashboard.json`
+- **Fallback strategy**:
+  - Each source fetch is wrapped in safe error handling
+  - Source-level failures return empty lists instead of crashing the page
+  - Remaining sources still render
 
-Create a blog with Astro and deploy it on Cloudflare Workers as a [static website](https://developers.cloudflare.com/workers/static-assets/).
+## Pages
 
-Features:
+- `/` Dashboard (news + scores + sport tabs + last-updated)
+- `/sport/[sport]` Sport-specific view
+- `/news` All articles with sport filters and search
+- `/scores` All recent/upcoming games
+- `/about` Data source and refresh explanation
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-- ✅ Built-in Observability logging
+## Data sources
 
-<!-- dash-content-end -->
+### News
+- Google News RSS search for "Ole Miss sports"
+- OleMissSports.com RSS feeds by sport (football, men's basketball, women's basketball, baseball, softball)
 
-## Getting Started
+### Scores/Schedule
+- ESPN public team schedule endpoints for Ole Miss team id `145`:
+  - football/college-football
+  - basketball/mens-college-basketball
+  - basketball/womens-college-basketball
+  - baseball/college-baseball
+  - softball/college-softball
 
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
+## Environment variables
+
+Create `.env.local` only if needed for future premium API keys:
 
 ```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/astro-blog-starter-template
+# Optional future use
+NEWS_API_KEY=
+SPORTS_API_KEY=
 ```
 
-A live public deployment of this template is available at [https://astro-blog-starter-template.templates.workers.dev](https://astro-blog-starter-template.templates.workers.dev)
+Current implementation uses public feeds/endpoints and does not require keys.
 
-## 🚀 Project Structure
+## Install + run
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+```bash
+npm install
+npm run dev
+```
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Build and run production locally:
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+```bash
+npm run build
+npm run start
+```
 
-Any static assets, like images, can be placed in the `public/` directory.
+Run tests:
 
-## 🧞 Commands
+```bash
+npm run test
+```
 
-All commands are run from the root of the project, from a terminal:
+## Extending data sources
 
-| Command                           | Action                                           |
-| :-------------------------------- | :----------------------------------------------- |
-| `npm install`                     | Installs dependencies                            |
-| `npm run dev`                     | Starts local dev server at `localhost:4321`      |
-| `npm run build`                   | Build your production site to `./dist/`          |
-| `npm run preview`                 | Preview your build locally, before deploying     |
-| `npm run astro ...`               | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help`         | Get help using the Astro CLI                     |
-| `npm run build && npm run deploy` | Deploy your production site to Cloudflare        |
-| `npm wrangler tail`               | View real-time logs for all Workers              |
+- Add/replace RSS feeds in `src/lib/constants.ts` (`NEWS_FEEDS`)
+- Add new score endpoint mappings in `SPORT_ENDPOINTS`
+- Keep normalization logic in `src/lib/normalize.ts`
+- Reuse `safeFetch` wrapper (`src/lib/errors.ts`) for resilient source ingestion
 
-## 👀 Want to learn more?
+## Known limitations
 
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+- Some college sports may not expose reliable public schedule endpoints or RSS coverage.
+- "Live" status depends on ESPN schedule state values and may lag by a short interval.
+- This project avoids brittle scraping and only uses public feed/API surfaces.
