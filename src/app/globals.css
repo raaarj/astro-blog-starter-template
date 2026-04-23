@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  --ole-red: #8c1d40;
+  --ole-blue: #1f2a44;
+  --background: #f8fafc;
+}
+
+body {
+  background: var(--background);
+  color: #0f172a;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+.card {
+  @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm;
+}
